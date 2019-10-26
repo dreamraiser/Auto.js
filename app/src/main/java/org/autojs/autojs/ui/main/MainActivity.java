@@ -38,6 +38,7 @@ import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
+import org.autojs.autojs.App;
 import org.autojs.autojs.BuildConfig;
 import org.autojs.autojs.Pref;
 import org.autojs.autojs.R;
@@ -45,6 +46,7 @@ import org.autojs.autojs.autojs.AutoJs;
 import org.autojs.autojs.external.foreground.ForegroundService;
 import org.autojs.autojs.model.explorer.Explorers;
 import org.autojs.autojs.tool.AccessibilityServiceTool;
+import org.autojs.autojs.tool.RootTool;
 import org.autojs.autojs.ui.BaseActivity;
 import org.autojs.autojs.ui.common.NotAskAgainDialog;
 import org.autojs.autojs.ui.doc.DocsFragment_;
@@ -143,6 +145,9 @@ public class MainActivity extends BaseActivity implements OnActivityResultDelega
     }
 
     private void showAccessibilitySettingPromptIfDisabled() {
+        if (RootTool.isRootAvailable()) {
+            return;
+        }
         if (AccessibilityServiceTool.isAccessibilityServiceEnabled(this)) {
             return;
         }
@@ -172,7 +177,6 @@ public class MainActivity extends BaseActivity implements OnActivityResultDelega
                 .add(new MyScriptListFragment_(), R.string.text_file)
                 .add(new DocsFragment_(), R.string.text_tutorial)
                 .add(new CommunityFragment_(), R.string.text_community)
-                .add(new MarketFragment(), R.string.text_market)
                 .add(new TaskManagerFragment_(), R.string.text_manage)
                 .build();
         mViewPager.setAdapter(mPagerAdapter);
@@ -216,7 +220,13 @@ public class MainActivity extends BaseActivity implements OnActivityResultDelega
         FloatyWindowManger.hideCircularMenu();
         ForegroundService.stop(this);
         stopService(new Intent(this, FloatyService.class));
-        AutoJs.getInstance().getScriptEngineService().stopAll();
+        if (App.Companion.isIsAccessibilityServiceInit()) {
+            AutoJs.getInstance().getScriptEngineService().stopAll();
+        }
+        try {
+            System.exit(0);
+        }catch (Exception e){
+        }
     }
 
     @Override
@@ -252,14 +262,6 @@ public class MainActivity extends BaseActivity implements OnActivityResultDelega
             return 2;
         }
         return grantResults[i];
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if (!BuildConfig.DEBUG) {
-            DeveloperUtils.verifyApk(this, R.string.dex_crcs);
-        }
     }
 
 

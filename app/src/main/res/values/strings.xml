@@ -38,6 +38,7 @@
     <string name="text_floating_window">悬浮窗</string>
     <string name="text_error_report">错误报告</string>
     <string name="text_press_again_to_exit">再按一次退出程序</string>
+    <string name="sorry_for_crash">很抱歉(ಥ _ ಥ)程序遇到未知错误，即将停止运行\n错误代码：</string>
     <string name="text_already_stop_n_scripts">已停止%d个正在运行的脚本</string>
     <string name="text_start_running">开始运行</string>
     <string name="text_open_by_other_apps">用其他应用打开</string>

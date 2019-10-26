@@ -8,73 +8,77 @@ package org.autojs.autojs.tool;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Looper;
-import android.util.Log;
+import android.view.WindowManager;
+import android.widget.Toast;
 
 import com.stardust.app.GlobalAppContext;
+import com.stardust.util.IntentUtil;
+import com.stardust.view.accessibility.AccessibilityService;
 
 import org.autojs.autojs.BuildConfig;
+import org.autojs.autojs.R;
 import org.mozilla.javascript.RhinoException;
 
-import com.stardust.view.accessibility.AccessibilityService;
-import com.tencent.bugly.crashreport.BuglyLog;
-import com.tencent.bugly.crashreport.CrashReport;
-
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.Map;
 
-public class CrashHandler extends CrashReport.CrashHandleCallback implements UncaughtExceptionHandler {
+public class CrashHandler implements UncaughtExceptionHandler {
     private static final String TAG = "CrashHandler";
     private static int crashCount = 0;
     private static long firstCrashMillis = 0;
     private final Class<?> mErrorReportClass;
-    private UncaughtExceptionHandler mBuglyHandler;
-    private UncaughtExceptionHandler mSystemHandler;
+    private UncaughtExceptionHandler mDefaultHandler;
 
     public CrashHandler(Class<?> errorReportClass) {
         this.mErrorReportClass = errorReportClass;
-        mSystemHandler = Thread.getDefaultUncaughtExceptionHandler();
-    }
-
-    public void setBuglyHandler(UncaughtExceptionHandler buglyHandler) {
-        mBuglyHandler = buglyHandler;
+        mDefaultHandler = Thread.getDefaultUncaughtExceptionHandler();
     }
 
     public void uncaughtException(Thread thread, Throwable ex) {
-        Log.e(TAG, "Uncaught Exception", ex);
         if (thread != Looper.getMainLooper().getThread()) {
-            if(!(ex instanceof RhinoException)){
-                CrashReport.postCatchedException(ex, thread);
+            if (!(ex instanceof RhinoException)) {
+                LogUtil.e(TAG, "Uncaught Exception", ex);
             }
             return;
         }
         AccessibilityService service = AccessibilityService.Companion.getInstance();
         if (service != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            Log.d(TAG, "disable service: " + service);
+            LogUtil.d(TAG, "disable service: " + service);
             service.disableSelf();
         } else {
-            BuglyLog.d(TAG, "cannot disable service: " + service);
+            LogUtil.d(TAG, "cannot disable service: " + service);
         }
+
         if (BuildConfig.DEBUG) {
-            mSystemHandler.uncaughtException(thread, ex);
+            mDefaultHandler.uncaughtException(thread, ex);
+            return;
+        }
+        if (causedByBadWindowToken(ex)) {
+            Toast.makeText(GlobalAppContext.get(), R.string.text_no_floating_window_permission, Toast.LENGTH_SHORT).show();
+            IntentUtil.goToAppDetailSettings(GlobalAppContext.get());
         } else {
-            mBuglyHandler.uncaughtException(thread, ex);
+            try {
+                LogUtil.e(TAG, "Uncaught Exception", ex);
+                if (crashTooManyTimes())
+                    return;
+                String msg = GlobalAppContext.getString(R.string.sorry_for_crash) + ex.toString();
+                startErrorReportActivity(msg, throwableToString(ex));
+                System.exit(1);
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+            }
         }
     }
 
-    @Override
-    public synchronized Map<String, String> onCrashHandleStart(int crashType, String errorType,
-                                                               String errorMessage, String errorStack) {
-        Log.d(TAG, "onCrashHandleStart: crashType = " + crashType + ", errorType = " + errorType + ", msg = "
-                + errorMessage + ", stack = " + errorStack);
-        try {
-            if (crashTooManyTimes())
-                return super.onCrashHandleStart(crashType, errorType, errorMessage, errorStack);
-            String msg = errorType + ": " + errorMessage;
-            startErrorReportActivity(msg, errorStack);
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
+    private static boolean causedByBadWindowToken(Throwable e) {
+        while (e != null) {
+            if (e instanceof WindowManager.BadTokenException) {
+                return true;
+            }
+            e = e.getCause();
         }
-        return super.onCrashHandleStart(crashType, errorType, errorMessage, errorStack);
+        return false;
     }
 
     private void startErrorReportActivity(String msg, String detail) {
@@ -103,5 +107,12 @@ public class CrashHandler extends CrashReport.CrashHandleCallback implements Unc
         return System.currentTimeMillis() - firstCrashMillis > 3000;
     }
 
+    public static String throwableToString(Throwable throwable) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        throwable.printStackTrace();
+        throwable.printStackTrace(pw);
+        return sw.toString();
+    }
 
 }

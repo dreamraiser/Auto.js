@@ -126,7 +126,6 @@ public class TaskListRecyclerView extends ThemeColorRecyclerView {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        AutoJs.getInstance().getScriptEngineService().registerGlobalScriptExecutionListener(mScriptExecutionListener);
         mTimedTaskChangeDisposable = TimedTaskManager.getInstance().getTimeTaskChanges()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onTaskChange);
@@ -146,7 +145,6 @@ public class TaskListRecyclerView extends ThemeColorRecyclerView {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        AutoJs.getInstance().getScriptEngineService().unregisterGlobalScriptExecutionListener(mScriptExecutionListener);
         mTimedTaskChangeDisposable.dispose();
         mIntentTaskChangeDisposable.dispose();
     }

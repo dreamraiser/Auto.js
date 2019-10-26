@@ -72,7 +72,7 @@ public class Pref {
     }
 
     public static boolean shouldEnableAccessibilityServiceByRoot() {
-        return def().getBoolean(getString(R.string.key_enable_accessibility_service_by_root), false);
+        return def().getBoolean(getString(R.string.key_enable_accessibility_service_by_root), true);
     }
 
     private static String getString(int id) {
