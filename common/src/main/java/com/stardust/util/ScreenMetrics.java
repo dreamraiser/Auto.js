@@ -1,11 +1,13 @@
 package com.stardust.util;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.Surface;
+import android.view.WindowManager;
 
 import static java.lang.System.out;
 
@@ -30,6 +32,19 @@ public class ScreenMetrics {
         deviceScreenWidth = metrics.widthPixels;
         deviceScreenDensity = metrics.densityDpi;
         display = activity.getWindowManager().getDefaultDisplay();
+        initialized = true;
+    }
+
+    public static void initIfNeeded(Context context) {
+        if (initialized)
+            return;
+        DisplayMetrics metrics = new DisplayMetrics();
+        WindowManager windowManager = (WindowManager) context.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        display = windowManager.getDefaultDisplay();
+        display.getRealMetrics(metrics);
+        deviceScreenHeight = metrics.heightPixels;
+        deviceScreenWidth = metrics.widthPixels;
+        deviceScreenDensity = metrics.densityDpi;
         initialized = true;
     }
 

@@ -17,6 +17,7 @@ import com.stardust.app.GlobalAppContext
 import com.stardust.autojs.core.ui.inflater.ImageLoader
 import com.stardust.autojs.core.ui.inflater.util.Drawables
 import com.stardust.theme.ThemeColor
+import com.stardust.util.ScreenMetrics
 import org.autojs.autojs.autojs.AutoJs
 import org.autojs.autojs.autojs.key.GlobalKeyObserver
 import org.autojs.autojs.external.receiver.DynamicBroadcastReceivers
@@ -137,6 +138,7 @@ class App : MultiDexApplication() {
         fun initAccessibilityService() {
             if (!isAccessibilityServiceInit) try {
                 AutoJs.initInstance(getApp())
+                ScreenMetrics.initIfNeeded(getApp())
                 isAccessibilityServiceInit = true
             } catch (e: Exception) {
                 LogUtil.e(TAG, Log.getStackTraceString(e))
